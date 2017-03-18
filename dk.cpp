@@ -21,6 +21,15 @@ map<int, Point> cities;
 double** g;
 double** c;
 
+void set_input()
+{
+  src = 0; tgt = 5;
+  cout << "Input source city index: " << src << endl;
+  cout << "Input destination city index: " << tgt << endl;
+  cout << "Computing shortest path from: " << src << " to "
+       << tgt << endl;
+}
+
 void get_input()
 {
   cout << "Input source city index: ";
@@ -262,7 +271,7 @@ int main()
   
     //dijkstra(graph, 7);
  
-    dk(g, 0, 5);
     dk(g, src, tgt);
+
     return 0;
 }
