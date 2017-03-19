@@ -152,8 +152,13 @@ void printc()
   }
 }
 
-void dk(double** & dk, int src, int tgt)
+#include <set>
+using std::set;
+
+set<int> dk(double** & dk, int src, int tgt)
 {
+     set<int> path;
+
      double dist[NV];     // The output array.  dist[i] will hold the shortest
                       // distance from src to i
   
@@ -175,7 +180,9 @@ void dk(double** & dk, int src, int tgt)
        // Pick the minimum distance vertex from the set of vertices not
        // yet processed. u is always equal to src in first iteration.
        int u = mindk(dist, sptSet);
-  
+ 
+       if (count == tgt)
+         cout << "u: " << u << endl;
        // Mark the picked vertex as processed
        sptSet[u] = true;
  
@@ -189,7 +196,8 @@ void dk(double** & dk, int src, int tgt)
          if (!sptSet[v] && g[u][v] && dist[u] != DBL_MAX 
                         && dist[u] + g[u][v] < dist[v])
          {
-           cout << count << "," << u << "," << v << endl;
+           path.insert(count);
+           //cout << count << ",";
            //cout << cc++ << endl;
            //nc = cc;
            dist[v] = dist[u] + g[u][v];
@@ -201,12 +209,13 @@ void dk(double** & dk, int src, int tgt)
            //  c[u+1][v] = 0;
            //c[u+1][v-1] = dist[v];
          }
+         
        }
      }
      // print the constructed distance array
      printdk(dist, NV);
      //printc();
-
+    return path;
 }
 
 // Funtion that implements Dijkstra's single source shortest path algorithm
@@ -255,7 +264,7 @@ void dijkstra(int graph[V][V], int src)
 int main()
 {
   make_graph();
-  get_input();
+  set_input();
   
    /* Let us create the example graph discussed above */
    int graph[V][V] = {{0, 4, 0, 0, 0, 0, 0, 8, 0},
@@ -271,7 +280,10 @@ int main()
   
     //dijkstra(graph, 7);
  
-    dk(g, src, tgt);
-
+    set<int> p = dk(g, src, tgt);
+    set<int>::iterator i = p.begin();
+    for( ; i != p.end(); ++i)
+      cout << *i << " -> ";
+    cout << tgt << endl;
     return 0;
 }

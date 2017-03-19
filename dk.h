@@ -45,15 +45,15 @@ class Point
     return d;
   };
 
-  /** 
+  /**
    * Output operator
    */
    friend ostream & operator<< (ostream & o, Point & p)
-   {   
+   {
      o << "(" << p.x << ", " << p.y << ", " << p.z << ")" << endl;
 
      return o;
-   };  
+   };
 
 };
 
