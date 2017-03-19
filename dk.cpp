@@ -214,6 +214,7 @@ set<int> dk(double** & dk, int src, int tgt)
      // print the constructed distance array
      printdk(dist, NV);
      //printc();
+    cout << "SP Cost: " << dist[tgt] << endl;
     return path;
 }
 
@@ -241,9 +242,11 @@ int main(int argc, char* argv[])
     ss.str(""); ss.clear();
     set<string> pp = gg.dk_spath(srcstr, tgtstr, tgt);
     set<int>::iterator i = p.begin();
+    cout << "Generic Dijkstra SP" << endl;
     for( ; i != p.end(); ++i)
       cout << *i << " -> ";
     cout << tgt << endl;
+    cout << "Generic Dijkstra SP With PQ" << endl;
     set<string>::iterator ii = pp.begin();
     for( ; ii != pp.end(); ++ii)
       cout << *ii << " -> ";

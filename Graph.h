@@ -523,6 +523,12 @@ struct Graph
     dist[sv->p.idx] = 0;
     int count = 0;
     double pd = -1;
+    double cost = 0;
+
+    stringstream ss;
+    ss << pv;
+    int pvi;  ss >> pvi;
+
     while(!pq.empty())
     {
       Vertex u = pq.top().first;
@@ -535,7 +541,7 @@ struct Graph
         Vertex v  = *(epv[i]->v);
         string id = v.id;
         double w  = epv[i]->cap;
-        cout << u.id << "," << v.id << "," << count << endl;
+        //cout << u.id << "," << v.id << "," << count << endl;
         if (count == pw)
         {
           if(u.p.idx < v.p.idx )
@@ -565,11 +571,15 @@ struct Graph
       }
       count++;
     }
+
     for(size_t i = 0; i < vsize(); ++i)
     {
       cout << i << "\t\t" << dist[i] << endl;
+      if( i == pvi)
+        cost = dist[i];
     }
 
+    cout << "SP Cost: " << cost << endl;
     return path;
   }
 
