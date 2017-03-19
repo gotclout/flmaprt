@@ -242,7 +242,7 @@ int main()
   make_graph();
   set_input();
 
-    set<int> p = dk(g, src, tgt);
+    get<int> p = dk(g, src, tgt);
 
     stringstream ss;
     string srcstr, tgtstr;
