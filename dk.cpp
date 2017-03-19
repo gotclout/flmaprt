@@ -20,7 +20,7 @@ int NV, NE;
 map<int, Point> cities;
 double** g;
 double** c;
-
+Graph gg;
 void set_input()
 {
   src = 0; tgt = 5;
@@ -40,14 +40,37 @@ void get_input()
        << tgt << endl;
 }
 
+void make_graph2()
+{
+  int u, v, d, i, j;
+
+  ifstream in("./doc/sample.txt", ios::in);
+
+  if(in.is_open())
+  {
+    for(i = 0; i < NE; ++i)
+    {
+      in >> u;
+      in >> v;
+      Vertex vu(u);
+      Vertex vv(v);
+      vu.p = cities[u];
+      vv.p = cities[v];
+      gg.add_edge(vu, vv, cities[u].distance(cities[v]));
+    }
+
+    cout << gg;
+  }
+}
+
 void make_graph()
 {
   int u, v, d, i, j;
 
-
   ifstream in("./doc/sample.txt", ios::in);
 
-  //if(in.is_open(), ios::in)
+  stringstream ss;
+
   if(in.is_open())
   {
     in >> NV >> NE;
@@ -68,7 +91,6 @@ void make_graph()
     for(i = 0; i < NV; ++i)
     {
       g[i] = new double[NV];
-      c[i] = new double[NV];
     }
 
     for(i = 0; i < NV; ++i)
@@ -76,7 +98,6 @@ void make_graph()
       for(j = 0; j < NV; ++j)
       {
         g[i][j] = 0;
-        c[i][j] = 0;
       }
     }
     for(i = 0; i < NE; ++i)
@@ -84,7 +105,17 @@ void make_graph()
       in >> u;
       in >> v;
 
+      ss << u;
+      Vertex vu(ss.str());
+      ss.str(""); ss.clear();
+      ss << v;
+      Vertex vv(ss.str());
+      ss.str(""); ss.clear();
+      vu.p = cities[u];
+      vv.p = cities[v];
+
       g[u][v] = g[v][u] = cities[u].distance(cities[v]);
+      gg.add_edge(vu, vv, cities[u].distance(cities[v]));
     }
 
     for(i = 0; i < NV; ++i)
@@ -95,6 +126,7 @@ void make_graph()
       }
       cout << endl;
     }
+    cout << gg;
   }
 }
 
@@ -152,8 +184,6 @@ void printc()
   }
 }
 
-#include <set>
-using std::set;
 
 set<int> dk(double** & dk, int src, int tgt)
 {
@@ -197,19 +227,8 @@ set<int> dk(double** & dk, int src, int tgt)
                         && dist[u] + g[u][v] < dist[v])
          {
            path.insert(count);
-           //cout << count << ",";
-           //cout << cc++ << endl;
-           //nc = cc;
            dist[v] = dist[u] + g[u][v];
-           //c[u+1][v] = dist[v];
-           //c[u][v+1] = dist[v];
          }
-         else
-         { //if(dist[v] == DBL_MAX)
-           //  c[u+1][v] = 0;
-           //c[u+1][v-1] = dist[v];
-         }
-         
        }
      }
      // print the constructed distance array
@@ -218,72 +237,27 @@ set<int> dk(double** & dk, int src, int tgt)
     return path;
 }
 
-// Funtion that implements Dijkstra's single source shortest path algorithm
-// for a graph represented using adjacency matrix representation
-void dijkstra(int graph[V][V], int src)
-{
-     int dist[V];     // The output array.  dist[i] will hold the shortest
-                      // distance from src to i
-  
-     bool sptSet[V]; // sptSet[i] will true if vertex i is included in shortest
-                     // path tree or shortest distance from src to i is finalized
-  
-     // Initialize all distances as INFINITE and stpSet[] as false
-     for (int i = 0; i < V; i++)
-        dist[i] = INT_MAX, sptSet[i] = false;
-  
-     // Distance of source vertex from itself is always 0
-     dist[src] = 0;
-  
-     // Find shortest path for all vertices
-     for (int count = 0; count < V-1; count++)
-     {
-       // Pick the minimum distance vertex from the set of vertices not
-       // yet processed. u is always equal to src in first iteration.
-       int u = minDistance(dist, sptSet);
-  
-       // Mark the picked vertex as processed
-       sptSet[u] = true;
-  
-       // Update dist value of the adjacent vertices of the picked vertex.
-       for (int v = 0; v < V; v++)
-  
-         // Update dist[v] only if is not in sptSet, there is an edge from 
-         // u to v, and total weight of path from src to  v through u is 
-         // smaller than current value of dist[v]
-         if (!sptSet[v] && graph[u][v] && dist[u] != INT_MAX 
-                                       && dist[u]+graph[u][v] < dist[v])
-            dist[v] = dist[u] + graph[u][v];
-     }
-  
-     // print the constructed distance array
-     printSolution(dist, V);
-}
-  
-// driver program to test above function
 int main()
 {
   make_graph();
   set_input();
-  
-   /* Let us create the example graph discussed above */
-   int graph[V][V] = {{0, 4, 0, 0, 0, 0, 0, 8, 0},
-                      {4, 0, 8, 0, 0, 0, 0, 11, 0},
-                      {0, 8, 0, 7, 0, 4, 0, 0, 2},
-                      {0, 0, 7, 0, 9, 14, 0, 0, 0},
-                      {0, 0, 0, 9, 0, 10, 0, 0, 0},
-                      {0, 0, 4, 14, 10, 0, 2, 0, 0},
-                      {0, 0, 0, 0, 0, 2, 0, 1, 6},
-                      {8, 11, 0, 0, 0, 0, 1, 0, 7},
-                      {0, 0, 2, 0, 0, 0, 6, 7, 0}
-                     };
-  
-    //dijkstra(graph, 7);
- 
+
     set<int> p = dk(g, src, tgt);
+
+    stringstream ss;
+    string srcstr, tgtstr;
+    ss << src; ss >> srcstr;
+    ss.str(""); ss.clear();
+    ss << tgt; ss >> tgtstr;
+    ss.str(""); ss.clear();
+    set<string> pp = gg.dk_spath(srcstr, tgtstr, tgt);
     set<int>::iterator i = p.begin();
     for( ; i != p.end(); ++i)
       cout << *i << " -> ";
+    cout << tgt << endl;
+    set<string>::iterator ii = pp.begin();
+    for( ; ii != pp.end(); ++ii)
+      cout << *ii << " -> ";
     cout << tgt << endl;
     return 0;
 }
