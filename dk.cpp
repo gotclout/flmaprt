@@ -14,6 +14,8 @@
 
 using namespace std;
 
+string mapfile = "";
+
 int src, tgt;
 int NV, NE;
 
@@ -40,34 +42,12 @@ void get_input()
        << tgt << endl;
 }
 
-void make_graph2()
+
+void make_graph(string input = "./doc/sample.txt")
 {
   int u, v, d, i, j;
 
-  ifstream in("./doc/sample.txt", ios::in);
-
-  if(in.is_open())
-  {
-    for(i = 0; i < NE; ++i)
-    {
-      in >> u;
-      in >> v;
-      Vertex vu(u);
-      Vertex vv(v);
-      vu.p = cities[u];
-      vv.p = cities[v];
-      gg.add_edge(vu, vv, cities[u].distance(cities[v]));
-    }
-
-    cout << gg;
-  }
-}
-
-void make_graph()
-{
-  int u, v, d, i, j;
-
-  ifstream in("./doc/sample.txt", ios::in);
+  ifstream in(input.c_str(), ios::in);
 
   stringstream ss;
 
@@ -237,12 +217,21 @@ set<int> dk(double** & dk, int src, int tgt)
     return path;
 }
 
-int main()
+int main(int argc, char* argv[])
 {
-  make_graph();
-  set_input();
 
-    get<int> p = dk(g, src, tgt);
+  if (argc == 2)
+  {
+    stringstream s;
+
+    s << argv[1];
+    s >> mapfile;
+  }
+
+  make_graph();
+  get_input();
+
+    set<int> p = dk(g, src, tgt);
 
     stringstream ss;
     string srcstr, tgtstr;
