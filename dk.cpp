@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <new>
+
 
 #include "dk.h"
 
@@ -42,7 +44,6 @@ void get_input()
        << tgt << endl;
 }
 
-
 void make_graph(string input = "./doc/sample.txt")
 {
   int u, v, d, i, j;
@@ -60,9 +61,9 @@ void make_graph(string input = "./doc/sample.txt")
          << NE << " edges" << endl;
 
     cout << "Adding cities to graph..." << endl;
+    Point p;
     for(i = 0; i < NV; ++i)
     {
-      Point p;
       in >> p.idx;
       in >> p.x;
       in >> p.y;
@@ -70,19 +71,21 @@ void make_graph(string input = "./doc/sample.txt")
       cities[p.idx] = p;
     }
 
+    cout << "last" << endl << p << endl;
     cout << "Cities added to graph" << endl;
 
     g = new float*[NV];
     for(i = 0; i < NV; ++i)
     {
-      g[i] = new float[NV];
+      g[i] = new (std::nothrow)float[NV];
       for(j = 0; j <NV; ++j)
-        g[i][j] = 0;
+        g[i][j] = 0.0;
       //vector <float> vf(NV, 0);
       //g.push_back(vf);
     }
 
     cout << "Adding edges to graph..." << endl;
+    u = v = 0;
     for(i = 0; i < NE; ++i)
     {
       in >> u;
