@@ -101,7 +101,7 @@ void make_graph(string input = "./doc/sample.txt")
       vv.p = cities[v];
 
       g[u][v] = g[v][u] = cities[u].distance(cities[v]);
-      gg.add_edge(vu, vv, cities[u].distance(cities[v]));
+      gg.add_edge(vu, vv, g[u][v]);
     }
 
     cout << "Edges added to graph" << endl;
@@ -172,7 +172,7 @@ set<int> dk(int src, int tgt)
        int u = mindk(dist, sptSet);
 
        if (count == tgt)
-         cout << "u: " << u << endl;
+         cout << "Generating Path " << u << endl;
        // Mark the picked vertex as processed
        sptSet[u] = true;
 
