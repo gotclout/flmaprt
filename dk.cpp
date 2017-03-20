@@ -172,7 +172,7 @@ set<int> dk(int src, int tgt)
        int u = mindk(dist, sptSet);
 
        if (count == tgt)
-         cout << "Generating Path " << u << endl;
+         cout << "Generating Path " << src << " " << tgt << endl; //u
        // Mark the picked vertex as processed
        sptSet[u] = true;
 
@@ -192,7 +192,7 @@ set<int> dk(int src, int tgt)
        }
      }
      // print the constructed distance array
-     printdk(dist, NV);
+    //printdk(dist, NV);
     cout << "SP Cost: " << dist[tgt] << endl;
     return path;
 }
@@ -216,6 +216,14 @@ int main(int argc, char* argv[])
   get_input();
 
     set<int> p = dk(src, tgt);
+    for(int i = 0; i < NV; ++i)
+      delete  [] g[i];
+    delete []g;
+    set<int>::iterator i = p.begin();
+    cout << "Generic Dijkstra SP" << endl;
+    for( ; i != p.end(); ++i)
+      cout << *i << " -> ";
+    cout << tgt << endl;
 
     stringstream ss;
     string srcstr, tgtstr;
@@ -223,22 +231,13 @@ int main(int argc, char* argv[])
     ss.str(""); ss.clear();
     ss << tgt; ss >> tgtstr;
     ss.str(""); ss.clear();
+
     set<string> pp = gg.dk_spath(srcstr, tgtstr, tgt);
-    set<int>::iterator i = p.begin();
-    cout << "Generic Dijkstra SP" << endl;
-    for( ; i != p.end(); ++i)
-      cout << *i << " -> ";
-    cout << tgt << endl;
     cout << "Generic Dijkstra SP With PQ" << endl;
     set<string>::iterator ii = pp.begin();
     for( ; ii != pp.end(); ++ii)
       cout << *ii << " -> ";
     cout << tgt << endl;
-
-    for(int i = 0; i < NV; ++i)
-      delete  [] g[i];
-
-    delete []g;
 
     return 0;
 }
