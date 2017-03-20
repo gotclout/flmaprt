@@ -21,6 +21,7 @@ int NV, NE;
 
 map<int, Point> cities;
 float** g;
+//vector< vector<float> > g;
 Graph gg;
 void set_input()
 {
@@ -58,6 +59,7 @@ void make_graph(string input = "./doc/sample.txt")
     cout << "Map contains " << NV << " verticies (cities) and "
          << NE << " edges" << endl;
 
+    cout << "Adding cities to graph..." << endl;
     for(i = 0; i < NV; ++i)
     {
       Point p;
@@ -66,7 +68,6 @@ void make_graph(string input = "./doc/sample.txt")
       in >> p.y;
 
       cities[p.idx] = p;
-      //cout << "Add City: " << p << endl;
     }
 
     cout << "Cities added to graph" << endl;
@@ -75,16 +76,13 @@ void make_graph(string input = "./doc/sample.txt")
     for(i = 0; i < NV; ++i)
     {
       g[i] = new float[NV];
-    }
-
-    for(i = 0; i < NV; ++i)
-    {
-      for(j = 0; j < NV; ++j)
-      {
+      for(j = 0; j <NV; ++j)
         g[i][j] = 0;
-      }
+      //vector <float> vf(NV, 0);
+      //g.push_back(vf);
     }
 
+    cout << "Adding edges to graph..." << endl;
     for(i = 0; i < NE; ++i)
     {
       in >> u;
@@ -125,41 +123,19 @@ void make_graph(string input = "./doc/sample.txt")
 }
 
 // Number of vertices in the graph
-#define V 9
-// A utility function to find the vertex with minimum distance value, from
-// the set of vertices not yet included in shortest path tree
-int minDistance(int dist[], bool sptSet[])
-{
-   // Initialize min value
-   int min = INT_MAX, min_index;
-  
-   for (int v = 0; v < V; v++)
-     if (sptSet[v] == false && dist[v] <= min)
-         min = dist[v], min_index = v;
-  
-   return min_index;
-}
-  
+
 int mindk(double dist[], bool sptSet[])
 {
    // Initialize min value
    double min = DBL_MAX, min_index;
-  
+
    for (int v = 0; v < NV; v++)
      if (sptSet[v] == false && dist[v] <= min)
          min = dist[v], min_index = v;
-  
+
    return min_index;
 }
 
-// A utility function to print the constructed distance array
-int printSolution(int dist[], int n)
-{
-   printf("Vertex   Distance from Source\n");
-   for (int i = 0; i < V; i++)
-      printf("%d \t\t %d\n", i, dist[i]);
-}
-  
 int printdk(double dist[], int n)
 {
    printf("Vertex   Distance from Source\n");
@@ -167,24 +143,23 @@ int printdk(double dist[], int n)
       printf("%d \t\t %f\n", i, dist[i]);
 }
 
-set<int> dk(float** & dk, int src, int tgt)
+set<int> dk(int src, int tgt)
 {
      set<int> path;
 
      double dist[NV];     // The output array.  dist[i] will hold the shortest
                       // distance from src to i
-  
+
      bool sptSet[NV]; // sptSet[i] will true if vertex i is included in shortest
                      // path tree or shortest distance from src to i is finalized
-  
+
      // Initialize all distances as INFINITE and stpSet[] as false
      for (int i = 0; i < NV; i++)
         dist[i] = DBL_MAX, sptSet[i] = false;
-  
+
      // Distance of source vertex from itself is always 0
      dist[src] = 0;
-     //dist[src] = 0;
- 
+
      int cc = 0, nc = 0;
      // Find shortest path for all vertices
      for (int count = 0; count < NV-1; count++)
@@ -192,12 +167,12 @@ set<int> dk(float** & dk, int src, int tgt)
        // Pick the minimum distance vertex from the set of vertices not
        // yet processed. u is always equal to src in first iteration.
        int u = mindk(dist, sptSet);
- 
+
        if (count == tgt)
          cout << "u: " << u << endl;
        // Mark the picked vertex as processed
        sptSet[u] = true;
- 
+
        //cout << "p: " << u << endl;
        // Update dist value of the adjacent vertices of the picked vertex.
        for (int v = 0; v < NV; v++)
@@ -205,7 +180,7 @@ set<int> dk(float** & dk, int src, int tgt)
          // Update dist[v] only if is not in sptSet, there is an edge from 
          // u to v, and total weight of path from src to  v through u is 
          // smaller than current value of dist[v]
-         if (!sptSet[v] && g[u][v] && dist[u] != DBL_MAX 
+         if (!sptSet[v] && g[u][v] && dist[u] != DBL_MAX
                         && dist[u] + g[u][v] < dist[v])
          {
            path.insert(count);
@@ -215,7 +190,6 @@ set<int> dk(float** & dk, int src, int tgt)
      }
      // print the constructed distance array
      printdk(dist, NV);
-     //printc();
     cout << "SP Cost: " << dist[tgt] << endl;
     return path;
 }
@@ -238,7 +212,7 @@ int main(int argc, char* argv[])
 
   get_input();
 
-    set<int> p = dk(g, src, tgt);
+    set<int> p = dk(src, tgt);
 
     stringstream ss;
     string srcstr, tgtstr;

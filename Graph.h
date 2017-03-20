@@ -554,7 +554,6 @@ struct Graph
             }
             else
             {
-              cout << dist[v.p.idx] << ":" << pd << endl;
               if(dist[v.p.idx] < pd )
               {
                 path.insert(v.id);
