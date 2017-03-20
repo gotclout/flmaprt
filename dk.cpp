@@ -20,8 +20,7 @@ int src, tgt;
 int NV, NE;
 
 map<int, Point> cities;
-double** g;
-double** c;
+float** g;
 Graph gg;
 void set_input()
 {
@@ -51,9 +50,13 @@ void make_graph(string input = "./doc/sample.txt")
 
   stringstream ss;
 
+  cout << "Generating graph from file:  " << input << endl;
   if(in.is_open())
   {
     in >> NV >> NE;
+
+    cout << "Map contains " << NV << " verticies (cities) and "
+         << NE << " edges" << endl;
 
     for(i = 0; i < NV; ++i)
     {
@@ -63,14 +66,15 @@ void make_graph(string input = "./doc/sample.txt")
       in >> p.y;
 
       cities[p.idx] = p;
-      cout << "Add City: " << p << endl;
+      //cout << "Add City: " << p << endl;
     }
 
-    g = new double*[NV];
-    c = new double*[NV];
+    cout << "Cities added to graph" << endl;
+
+    g = new float*[NV];
     for(i = 0; i < NV; ++i)
     {
-      g[i] = new double[NV];
+      g[i] = new float[NV];
     }
 
     for(i = 0; i < NV; ++i)
@@ -80,6 +84,7 @@ void make_graph(string input = "./doc/sample.txt")
         g[i][j] = 0;
       }
     }
+
     for(i = 0; i < NE; ++i)
     {
       in >> u;
@@ -98,6 +103,9 @@ void make_graph(string input = "./doc/sample.txt")
       gg.add_edge(vu, vv, cities[u].distance(cities[v]));
     }
 
+    cout << "Edges added to graph" << endl;
+
+    /*
     for(i = 0; i < NV; ++i)
     {
       for(j = 0; j < NV; ++j)
@@ -107,6 +115,12 @@ void make_graph(string input = "./doc/sample.txt")
       cout << endl;
     }
     cout << gg;
+    */
+    in.close();
+  }
+  else
+  {
+    cout << "Could not open: " << input << " for reading" << endl;
   }
 }
 
@@ -152,20 +166,8 @@ int printdk(double dist[], int n)
    for (int i = 0; i < NV; i++)
       printf("%d \t\t %f\n", i, dist[i]);
 }
-void printc()
-{
-  for (int i = 0; i < NV; ++i)
-  {
-    for(int j = 0; j < NV; ++j)
-    {
-      cout << c[i][j]<< "\t";
-    }
-    cout << endl;
-  }
-}
 
-
-set<int> dk(double** & dk, int src, int tgt)
+set<int> dk(float** & dk, int src, int tgt)
 {
      set<int> path;
 
@@ -227,9 +229,13 @@ int main(int argc, char* argv[])
 
     s << argv[1];
     s >> mapfile;
+    make_graph(mapfile);
+  }
+  else
+  {
+    make_graph();
   }
 
-  make_graph();
   get_input();
 
     set<int> p = dk(g, src, tgt);
@@ -251,5 +257,11 @@ int main(int argc, char* argv[])
     for( ; ii != pp.end(); ++ii)
       cout << *ii << " -> ";
     cout << tgt << endl;
+
+    for(int i = 0; i < NV; ++i)
+      delete  [] g[i];
+
+    delete []g;
+
     return 0;
 }
