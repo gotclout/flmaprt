@@ -4,6 +4,7 @@
 #include <sstream>
 #include <set>
 #include <queue>
+#include <limits>
 
 #include "Vertex.h"
 #include "FifoQueue.h"
@@ -14,11 +15,14 @@ using std::set;
 typedef list<Vertex*>     AdjList;
 typedef AdjList::iterator AdjListIt;
 
+static int gt = 0;
 /*******************************************************************************
  * Structure expressing an Adjacency Matrix for a graph G TODO:
  ******************************************************************************/
-struct AdjMatrix
+class AdjMatrix
 {
+  public:
+
   int n;      //
   Vertex** A; //
 
@@ -73,13 +77,15 @@ struct AdjMatrix
 /*******************************************************************************
  * Structure expressing graph edges
  ******************************************************************************/
-struct Edge
+class Edge
 {
+  public:
+
   Vertex* u,       // start vertex
         * v;       // end vertex
-  string  id;       // uid
-  double     flow,     // flow of the current edge
-          cap;      // capacity of the edge
+  string  id;      // uid
+  double  flow,    // flow of the current edge
+          cap;     // capacity of the edge
 
   /**
    * Default construct
@@ -171,12 +177,15 @@ typedef vector<Edge>  EdgeVector;
 typedef EdgeVector::iterator EdgeVectorIt;
 typedef vector<Edge*> EdgePtrVector;
 typedef EdgePtrVector::iterator EdgePtrVectorIt;
+typedef pair<Vertex, double> dpair;
 
 /*******************************************************************************
  * Structure for representing a graph G = (V, E)
  ******************************************************************************/
-struct Graph
+class Graph
 {
+  public:
+
   EdgeVector E;   //Collection of Edges
   VertexMap VE;   //Maps a vertex to a list of adjacent verticies
   bool directed,  //indicates whether G is a directed or undirected graph
@@ -223,24 +232,70 @@ struct Graph
     for(VertexMapIt i = VE.begin(); i != VE.end(); ++i)
     {
       Vertex* vptr = (Vertex*) &i->first;
-      vptr->pi = 0;
+      vptr->pi = NIL;
     }
   };
 
   /**
    *
    */
-  void init()
+  void init_single_src(Vertex* s)
+  {
+    Vertex* v;
+
+    for(VertexMapIt i = VE.begin(); i != VE.end(); ++i)
+    {
+      v     = (Vertex*) &i->first;
+      v->d  = std::numeric_limits<double>::infinity();
+      v->pi = NIL;
+    }
+
+    s->d = 0;
+  };
+
+  /**
+   *
+   */
+  void init(Vertex* v = NIL)
   {
     for(VertexMapIt i = VE.begin(); i != VE.end(); ++i)
     {
       Vertex* vptr = (Vertex*) &i->first;
-      vptr->pi      = 0;
-      vptr->visited = 0;
+      vptr->pi      = NIL;
+      vptr->visited = false;
       vptr->color   = eWhite;
     }
+    if(v) v->d = 0; //if single source
   };
 
+  /**
+   *
+   */
+  bool add_vertex(Vertex & vtx)
+  {
+    bool rval = true;
+
+    VertexMapIt vit = VE.find(Vertex(vtx.id)),
+                beg = VE.begin();
+    if(vit == VE.end())
+    {
+      vit = VE.insert(beg, VertexMapType(vtx, AdjList()));
+    }
+    else
+    {
+      rval = false;
+    }
+
+    return rval;
+  };
+
+  /**
+   *
+   */
+  void add_edge(Vertex* u, Vertex* v, double w = -1)
+  {
+    return add_edge(*u, *v, w);
+  }
   void add_edge(Vertex & u, Vertex & v, double w = -1)
   {
     VertexMapIt uit, vit, beg = VE.begin();
@@ -249,17 +304,15 @@ struct Graph
 
     uit = VE.find(Vertex(u.id));
     if(uit == VE.end())
-      uit = VE.insert(beg, VertexMapType(Vertex(u.id), AdjList()));
+      uit = VE.insert(beg, VertexMapType(u, AdjList()));
     uvt = (Vertex*)&(uit->first);
-    uvt->p = u.p;
 
     if(!uvt->adj) uvt->adj = (AdjList*)& uit->second;
 
     vit = VE.find(Vertex(v.id));
     if(vit == VE.end())
-      vit = VE.insert(beg, VertexMapType(Vertex(v), AdjList()));
+      vit = VE.insert(beg, VertexMapType(v, AdjList()));
     vvt = (Vertex*)&(vit->first);
-    vvt->p = v.p;
 
     if(!vvt->adj) vvt->adj = (AdjList*)& vit->second;
 
@@ -279,7 +332,7 @@ struct Graph
    * @param int u is the identifier for the first vertex
    * @param int v is the identifier for the second vertex
    */
-  void add_edge(string u, string v, int w = -1)
+  void add_edge(string u, string v, double w = -1)
   {
     VertexMapIt uit, vit, beg = VE.begin();
     Vertex* uvt, //u vertex ptr
@@ -312,7 +365,7 @@ struct Graph
   /**
    * Updates an edge flow and its reverse edge by m
    */
-  void update_edge(Vertex u, Vertex v, int m)
+  void update_edge(Vertex u, Vertex v, double m)
   {
     for(size_t i = 0; i < E.size(); ++i)
     {
@@ -341,7 +394,24 @@ struct Graph
    * @param int w
    * @return bool
    */
-  bool relax(Vertex & u, Vertex & v, int w)
+  bool relax(Vertex* & u, Vertex* & v, double w)
+  {
+    bool ret = false;
+
+    if(weighted)
+    {
+      if(u->d + w < v->d)
+      {
+        v->d = u->d + w;
+        v->pi = u;
+        ret = true;
+      }
+    }
+
+    return ret;
+  }
+
+  bool relax(Vertex & u, Vertex & v, double w)
   {
     bool ret = false;
 
@@ -442,6 +512,16 @@ struct Graph
     return i < E.size() && i > -1 ? &E[i] : 0;
   };
 
+  Edge* get_edge(Vertex* u, Vertex* v)
+  {
+    for(size_t i = 0; i < E.size(); ++i)
+    {
+      if(E[i].u->id == u->id && E[i].v->id == v->id)return &E[i];
+    }
+
+    return 0;
+  }
+
   /**
    * Retrieve vertex with the specified id
    */
@@ -499,13 +579,61 @@ struct Graph
   {
     bool rval = true;
 
+    dfs();
+
+    for(VertexMapIt i = VE.begin(); i != VE.end() && rval; ++i)
+    {
+      if(i->first.color != eBlack) rval = false;
+    }
+
     return rval;
   }
 
-  typedef pair<Vertex, double> dpair;
 
   /**
    *
+   */
+  void dfs()
+  {
+    init();
+
+    gt = 0;
+
+    for(VertexMapIt i = VE.begin(); i != VE.end(); ++i)
+    {
+      Vertex *u = (Vertex*) &i->first;
+      if(u->color  == eWhite)
+        dfs_visit(u);
+    }
+  }
+
+  /**
+   *
+   */
+  void dfs_visit(Vertex* & u)
+  {
+    gt += 1;
+    u->d = gt;
+    u->color = eGray;
+    Vertex* v = 0;
+
+    for(AdjListIt uit = u->adj->begin(); uit != u->adj->end(); ++uit)
+    {
+      v = (*uit);
+      if(v->color == eWhite)
+      {
+        v->pi = &(*u);
+        dfs_visit(v);
+      }
+    }
+
+    u->color = eBlack;
+    gt += 1;
+    u->f = gt;
+  }
+
+  /**
+   * Compute shortest path via Dijkstras SP with PQ
    */
   set<string> dk_spath(string pu, string pv, double pw)
   {
@@ -541,7 +669,6 @@ struct Graph
         Vertex v  = *(epv[i]->v);
         string id = v.id;
         double w  = epv[i]->cap;
-        //cout << u.id << "," << v.id << "," << count << endl;
         if (count == pw)
         {
           if(u.p.idx < v.p.idx )
@@ -573,7 +700,6 @@ struct Graph
 
     for(size_t i = 0; i < vsize(); ++i)
     {
-      cout << i << "\t\t" << dist[i] << endl;
       if( i == pvi)
         cost = dist[i];
     }

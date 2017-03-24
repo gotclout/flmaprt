@@ -11,6 +11,7 @@
 #include <climits>
 #include <cmath>
 #include <float.h>
+#include <sstream>
 
 using std::map;
 using std::vector;
@@ -19,6 +20,7 @@ using std::string;
 using std::iostream;
 using std::ostream;
 using std::endl;
+using std::stringstream;
 
 /** Vertex Color Enumeration **/
 enum EColor
@@ -36,15 +38,31 @@ class Point
 {
   public:
 
-     int idx;
-  double x,
+    int  idx;
+  float  x,
          y,
          z;
 
   /**
+   * Polar radius
+   */
+  double r()
+  {
+    return sqrt(x*x + y*y + z*z);
+  }
+
+  /**
+   *
+   */
+  double theta()
+  {
+    return atan2(y, x);
+  }
+
+  /**
    * Default constructor
    */
-  Point(double pX = 0, double pY = 0, double pZ = 0)
+  Point(double pX = 0, double pY = 0, double pZ = -1)
   {
     x = pX;
     y = pY;
@@ -52,12 +70,12 @@ class Point
   };
 
   /**
-   * Dist
+   * Compute point distance
    */
-  double distance(const Point & pStart)
+  double distance(const Point & pPoint)
   {
-    double dx = x - pStart.x,
-           dy = y - pStart.y,
+    double dx = x - pPoint.x,
+           dy = y - pPoint.y,
            d  = sqrt((dx*dx) + (dy*dy));
 
     return d;
@@ -68,7 +86,8 @@ class Point
    */
    friend ostream & operator<< (ostream & o, Point & p)
    {
-     o << "(" << p.x << ", " << p.y << ", " << p.z << ")" << endl;
+     o << "Point " << p.idx << ": " << "(" << p.x << ", " << p.y
+       << ", " << p.z << ")" << endl;
 
      return o;
    };
@@ -78,8 +97,9 @@ class Point
 /*******************************************************************************
  * Structure for expressing graph vertex
  ******************************************************************************/
-struct Vertex
+class Vertex
 {
+  public:
 
   typedef list<Vertex*>     AdjList;
   typedef AdjList::iterator AdjListIt;
@@ -87,10 +107,10 @@ struct Vertex
   AdjList* adj;   //adjacent verticies
   Vertex*  pi;    //parent
   EColor   color; //state
-  int      d,     //discovery time
-           f,     //finish time
-           l,     //lowest
+  double   d,     //discovery time
            mcap;  //min capacity of path to vertex
+  int      f,     //finish time
+           l;     //lowest
   double  maxcap,
           mincap;
   string   id;    //uid
@@ -107,7 +127,8 @@ struct Vertex
     adj   = 0;
     pi    = 0;
     color = eUndefined;
-    d     = l = f = -1;
+    d     = 0;
+    l     = f = -1;
     id    = "DEFAULT";
     mcap  = INT_MAX;
       aid = ppid;
@@ -116,6 +137,7 @@ struct Vertex
       aid++ ;
     }
 
+    visited = false;
   };
 
   /**
@@ -129,13 +151,16 @@ struct Vertex
     pi    = 0;
     color = eUndefined;
     id    = pId;
-    d     = l = f = -1;
+    d     = 0;
+    l     = f = -1;
     mcap  = INT_MAX;
       aid = ppid;
     if(ppid == -1)
     {
       aid++ ;
     }
+
+    visited = false;
   };
 
   /**
@@ -187,16 +212,25 @@ struct Vertex
   }
 
   /**
+   * Compute distance to paramaterized Vertex
+   */
+  double distance(const Vertex & pVertex)
+  {
+    return p.distance(pVertex.p);
+  };
+
+  /**
    *
    */
-  double distance(const Point & pStart)
+  int get_id()
   {
-    double dx = p.x - pStart.x,
-           dy = p.y - pStart.y,
-           d  = sqrt((dx*dx) + (dy*dy));
+    int rval;
+    stringstream ss;
+    ss << id;
+    ss >> rval;
 
-    return d;
-  }
+    return rval;
+  };
 
   /**
    * TODO: Copy/Assignment
@@ -205,9 +239,13 @@ struct Vertex
   {
     if(this != &rhs)
     {
-      id = rhs.id;
-      adj = new AdjList;
-      if(rhs.adj) *(adj = rhs.adj);
+      this->id = rhs.id;
+      if(rhs.adj)
+      {
+        adj = new AdjList;
+        *adj = *rhs.adj;
+      }
+      else adj = 0;
       aid = rhs.aid;
       pi = rhs.pi;
       color = rhs.color;
@@ -215,6 +253,10 @@ struct Vertex
       maxcap = rhs.maxcap;
       mincap = rhs.mincap;
       mcap   = rhs.mcap;
+      d      = rhs.d;
+      l      = rhs.l;
+      f      = rhs.f;
+      visited = rhs.visited;
     }
 
     return *this;
@@ -224,7 +266,12 @@ struct Vertex
   {
     id = src.id;
     adj = new AdjList;
-    if(src.adj) *(adj = src.adj);
+    if(src.adj)
+    {
+      adj = new AdjList;
+      *adj = *src.adj;
+    }
+    else adj = 0;
     aid = src.aid;
     pi = src.pi;
     color = src.color;
@@ -232,7 +279,11 @@ struct Vertex
     maxcap = src.maxcap;
     mincap = src.mincap;
     mcap   = src.mcap;
-  }
+    d      = src.d;
+    l      = src.l;
+    f      = src.f;
+    visited = src.visited;
+  };
 
   /**
    * Equivalence operator overload
@@ -265,6 +316,11 @@ struct Vertex
   bool operator<(const Vertex & rhs) const { return id < rhs.id; };
 
   /**
+   * Greater than operator overload
+   */
+  bool operator>(const Vertex & rhs) const { return !(*this < rhs); };
+
+  /**
    * Converts EColour enum to string
    */
   string get_color(const EColor & c)
@@ -287,6 +343,13 @@ struct Vertex
    * @param ostream outputstream for rendering
    * @param Vertex is the vertex to be rendered
    */
+  friend ostream& operator<< (ostream & o, const Vertex* & pV)
+  {
+    Vertex v = (Vertex) *pV;
+    o << "Address: " << &(*pV) << endl;
+    return operator<<(o, v);
+  };
+
   friend ostream& operator<< (ostream & o, const Vertex & pV)
   {
     Vertex v = (Vertex) pV;
@@ -318,7 +381,7 @@ struct Vertex
     if(v.f < 0) o << ", f[" << v.id << "]:"  << "UNDEFINED";
     else        o << ", f[" << v.id << "]:"  << v.f;
                 o << ", Color:"     << v.get_color(v.color);
-    o << "p(x, y, z): " << v.p;
+    o << ", " << v.p;
 
     return o;
   };

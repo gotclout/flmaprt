@@ -1,243 +1,273 @@
-// A C / C++ program for Dijkstra's single source shortest path algorithm.
-// The program is for adjacency matrix representation of the graph
-  
-#include <stdio.h>
-#include <limits.h>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <vector>
-#include <map>
-#include <new>
-
-
 #include "dk.h"
 
 using namespace std;
 
-string mapfile = "";
+string srcstr,
+       tgtstr;
 
-int src, tgt;
-int NV, NE;
+Graph g(false, true);
 
 map<int, Point> cities;
-float** g;
-//vector< vector<float> > g;
-Graph gg;
-void set_input()
-{
-  src = 0; tgt = 5;
-  cout << "Input source city index: " << src << endl;
-  cout << "Input destination city index: " << tgt << endl;
-  cout << "Computing shortest path from: " << src << " to "
-       << tgt << endl;
-}
 
+int NV,
+    NE;
+
+/**
+ *
+ */
 void get_input()
 {
   cout << "Input source city index: ";
-  cin >> src;
+  cin >> srcstr;
   cout << "Input destination city index: ";
-  cin >> tgt;
-  cout << "Computing shortest path from: " << src << " to "
-       << tgt << endl;
+  cin >> tgtstr;
+  cout << "Computing shortest path from: " << srcstr << " to "
+       << tgtstr << endl;
 }
 
-void make_graph(string input = "./doc/sample.txt")
+/**
+ *
+ */
+bool make_graph(string input = "./doc/sample.txt")
 {
-  int u, v, d, i, j;
+  int          i  = 0;
+  bool         ok = true;
+  Point        p;
+  string       s;
+  stringstream ss;
+  Vertex       *u,
+               *v;
+
+  cout << "Generating graph from file:  " << input << endl;
 
   ifstream in(input.c_str(), ios::in);
 
-  stringstream ss;
-
-  cout << "Generating graph from file:  " << input << endl;
   if(in.is_open())
   {
     in >> NV >> NE;
 
     cout << "Map contains " << NV << " verticies (cities) and "
-         << NE << " edges" << endl;
+         << NE << " edges" << endl
+         << "Generating city coordinates..." << endl;
 
-    cout << "Adding cities to graph..." << endl;
-    Point p;
-    for(i = 0; i < NV; ++i)
+    for( ; i < NV; ++i)
     {
-      in >> p.idx;
-      in >> p.x;
-      in >> p.y;
+      Vertex vtx;
 
-      cities[p.idx] = p;
-    }
+      in >> vtx.p.idx;
+      in >> vtx.p.x;
+      in >> vtx.p.y;
 
-    cout << "last" << endl << p << endl;
-    cout << "Cities added to graph" << endl;
-
-    g = new float*[NV];
-    for(i = 0; i < NV; ++i)
-    {
-      g[i] = new (std::nothrow)float[NV];
-      for(j = 0; j <NV; ++j)
-        g[i][j] = 0.0;
-      //vector <float> vf(NV, 0);
-      //g.push_back(vf);
-    }
-
-    cout << "Adding edges to graph..." << endl;
-    u = v = 0;
-    for(i = 0; i < NE; ++i)
-    {
-      in >> u;
-      in >> v;
-
-      ss << u;
-      Vertex vu(ss.str());
+      ss << vtx.p.idx;
+      vtx.id = ss.str();
       ss.str(""); ss.clear();
-      ss << v;
-      Vertex vv(ss.str());
-      ss.str(""); ss.clear();
-      vu.p = cities[u];
-      vv.p = cities[v];
 
-      g[u][v] = g[v][u] = cities[u].distance(cities[v]);
-      gg.add_edge(vu, vv, g[u][v]);
+      g.add_vertex(vtx);
     }
 
-    cout << "Edges added to graph" << endl;
+    cout << "Generated " << cities.size() << " city coordinates" << endl
+         << "Connecting edges between cities in graph..." << endl;
 
-    /*
-    for(i = 0; i < NV; ++i)
+    for(i = 0; i < NE && ok; ++i)
     {
-      for(j = 0; j < NV; ++j)
+      in >> s;
+      u = g.get_vertex(s);
+      in >> s;
+      v = g.get_vertex(s);
+
+      if(u && v)
       {
-        cout << g[i][j] << "\t";
+        //cout << u->id << "->" << v->id << " | " << u->distance(*v)
+        //     << endl;
+        g.add_edge(u, v, u->distance(*v));
       }
-      cout << endl;
+      else
+      {
+        cerr << "Error: Could not locate verticies exiting..." << endl;
+        ok = false;
+      }
     }
-    cout << gg;
-    */
+
+    if (ok) cout << "Connected " << g.esize() << " edges" << endl;
+
     in.close();
+    //DEBUG:
+    //cout << g << endl;
   }
   else
   {
-    cout << "Could not open: " << input << " for reading" << endl;
+    cerr << "Could not open: " << input << " for reading" << endl;
+    ok = false;
+  }
+
+  return ok;
+}
+
+/**
+ *
+ */
+void print_q(priority_queue<VertexEntry, vector<VertexEntry>, std::greater<VertexEntry> >& pq)
+{
+  cout << "Rendering Priority Queue..." << endl;
+  priority_queue<VertexEntry, vector<VertexEntry>, std::greater<VertexEntry> > c;
+  c = pq;
+  while(!c.empty())
+  {
+    VertexEntry* ve = (VertexEntry*) &c.top();
+    Vertex* u = ve->v;
+    //cout << "extract-min: " << "u[" << u->id << "]: " << u->d << endl;
+    c.pop();
   }
 }
 
-// Number of vertices in the graph
-
-int mindk(double dist[], bool sptSet[])
+/**
+ * TODO: MinHeap, MaxHeap, Template Class Wrappers
+ */
+void Heapify(MinQueue & pq)
 {
-   // Initialize min value
-   double min = DBL_MAX, min_index;
-
-   for (int v = 0; v < NV; v++)
-     if (sptSet[v] == false && dist[v] <= min)
-         min = dist[v], min_index = v;
-
-   return min_index;
+    make_heap(const_cast<VertexEntry*>(&pq.top()),
+              const_cast<VertexEntry*>(&pq.top()) + pq.size(), mcomp);
 }
 
-int printdk(double dist[], int n)
+/**
+ *
+ */
+void print_path(Vertex* & tgt, set<VertexEntry> & s)
 {
-   printf("Vertex   Distance from Source\n");
-   for (int i = 0; i < NV; i++)
-      printf("%d \t\t %f\n", i, dist[i]);
+  Vertex* vtgt = g.get_vertex(*tgt);
+
+  cout << "All pairs shortest path" << endl;
+
+  for(set<VertexEntry>::iterator vei = s.begin(); vei != s.end(); ++vei)
+  {
+    VertexEntry ve = *vei;
+    cout << "v[" << ve.v->id << "]: " << ve.v->d << endl;
+  }
+
+  if(vtgt)
+  {
+    cout << vtgt->id << " -> ";
+    Vertex* rent = vtgt->pi;
+    while(rent)
+    {
+      cout << rent->id ;
+      rent = rent->pi;
+      if(rent) cout << " -> ";
+    }
+    cout << endl;
+
+    VertexEntry ve(tgt);
+    set<VertexEntry>::iterator sit = s.find(ve);
+    if(sit != s.end())
+    {
+      VertexEntry ve = *sit;
+      cout << "Total Distance: " << ve.v->d << endl;
+    }
+  }
 }
 
-set<int> dk(int src, int tgt)
+/**
+ *
+ */
+double DIJKSTRA(Graph & g, Vertex* & src, Vertex* & tgt)
 {
-     set<int> path;
+  double rval = 0;
 
-     double dist[NV];     // The output array.  dist[i] will hold the shortest
-                      // distance from src to i
+  Vertex *v, *u;
+  Edge* e;
+  set<VertexEntry> s;
+  float w;
 
-     bool sptSet[NV]; // sptSet[i] will true if vertex i is included in shortest
-                     // path tree or shortest distance from src to i is finalized
+  g.init_single_src(src);
+  priority_queue<VertexEntry, vector<VertexEntry>, greater<VertexEntry> > pq;
 
-     // Initialize all distances as INFINITE and stpSet[] as false
-     for (int i = 0; i < NV; i++)
-        dist[i] = DBL_MAX, sptSet[i] = false;
+  cout << "Dijkstra Initialized Using Min Priority Queue..." << endl;
 
-     // Distance of source vertex from itself is always 0
-     dist[src] = 0;
+  for(VertexMapIt i = g.VE.begin(); i != g.VE.end(); ++i)
+  {
+    v = (Vertex*) &i->first;
+    VertexEntry ve(v);
+    pq.push(ve);
+  }
 
-     int cc = 0, nc = 0;
-     // Find shortest path for all vertices
-     for (int count = 0; count < NV-1; count++)
-     {
-       // Pick the minimum distance vertex from the set of vertices not
-       // yet processed. u is always equal to src in first iteration.
-       int u = mindk(dist, sptSet);
+  while(!pq.empty())
+  {
+    //extract_min(pq, u);
+    //DEBUG:
+    //print_q(pq);
+    VertexEntry* ve = (VertexEntry*) &pq.top();
+    u = ve->v;
+    s.insert(*ve);
+    pq.pop();
+    //DEBUG:
+    //cout << "extract-min: " << u->id << " : " << u->d << endl;
 
-       if (count == tgt)
-         cout << "Generating Path " << src << " " << tgt << endl; //u
-       // Mark the picked vertex as processed
-       sptSet[u] = true;
+    AdjListIt ait = u->adj->begin();
+    for( ; ait != u->adj->end(); ++ait)
+    {
+      v = *ait;
+      w = g.get_edge(u, v)->cap;
+      g.relax(u, v, w);
+    }
+    Heapify(pq);
+    //cout << "Vertex[" << u->id << "] processed" << endl;
+  }
 
-       //cout << "p: " << u << endl;
-       // Update dist value of the adjacent vertices of the picked vertex.
-       for (int v = 0; v < NV; v++)
-       { 
-         // Update dist[v] only if is not in sptSet, there is an edge from 
-         // u to v, and total weight of path from src to  v through u is 
-         // smaller than current value of dist[v]
-         if (!sptSet[v] && g[u][v] && dist[u] != DBL_MAX
-                        && dist[u] + g[u][v] < dist[v])
-         {
-           path.insert(count);
-           dist[v] = dist[u] + g[u][v];
-         }
-       }
-     }
-     // print the constructed distance array
-    //printdk(dist, NV);
-    cout << "SP Cost: " << dist[tgt] << endl;
-    return path;
+  cout << "Rendering path" << endl;
+  print_path(tgt, s);
+
+  VertexEntry ve(tgt);
+  set<VertexEntry>::iterator sit = s.find(ve);
+  if(sit != s.end())
+  {
+    VertexEntry ve = *sit;
+    rval = ve.v->d;
+  }
+
+  return rval;
 }
 
+/**
+ *
+ */
 int main(int argc, char* argv[])
 {
+  string mapfile;
+  bool ok = true;
 
-  if (argc == 2)
+  if(argc == 2)
   {
-    stringstream s;
+   stringstream s;
 
     s << argv[1];
     s >> mapfile;
-    make_graph(mapfile);
+    ok = make_graph(mapfile);
   }
   else
   {
-    make_graph();
+    ok = make_graph();
   }
 
-  get_input();
+  if(ok)
+  {
+    get_input();
+    Vertex *src = g.get_vertex(srcstr),
+           *tgt = g.get_vertex(tgtstr);
+    if(!src)
+    {
+      cout << "Error: Could not retrive source city " << srcstr << endl;
+      ok = false;
+    }
+    else if(!src)
+    {
+      cout << "Error: Could not retrive destination city " << tgtstr << endl;
+      ok = false;
+    }
+    else
+      DIJKSTRA(g, src, tgt);
+  }
 
-    set<int> p = dk(src, tgt);
-    for(int i = 0; i < NV; ++i)
-      delete  [] g[i];
-    delete []g;
-    set<int>::iterator i = p.begin();
-    cout << "Generic Dijkstra SP" << endl;
-    for( ; i != p.end(); ++i)
-      cout << *i << " -> ";
-    cout << tgt << endl;
+  if(!ok) cerr << "Unable to recover from previous errors, exiting..." << endl;
 
-    stringstream ss;
-    string srcstr, tgtstr;
-    ss << src; ss >> srcstr;
-    ss.str(""); ss.clear();
-    ss << tgt; ss >> tgtstr;
-    ss.str(""); ss.clear();
-
-    set<string> pp = gg.dk_spath(srcstr, tgtstr, tgt);
-    cout << "Generic Dijkstra SP With PQ" << endl;
-    set<string>::iterator ii = pp.begin();
-    for( ; ii != pp.end(); ++ii)
-      cout << *ii << " -> ";
-    cout << tgt << endl;
-
-    return 0;
+  return 0;
 }
